@@ -32,7 +32,7 @@
   }
   label{display:block;font-size:0.8rem;font-weight:700;color:var(--muted);
     text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.35rem;}
-  select, input[type=text], input[type=number]{
+  select, input[type=text], input[type=number], input[type=date]{
     width:100%;padding:0.7rem;border-radius:8px;border:1px solid #d8cdea;
     font-size:1rem;margin-bottom:1rem;background:#fff;color:var(--text);
   }
@@ -97,6 +97,9 @@
 
     <label>Turma</label>
     <input type="text" id="turma" placeholder="Ex: 8ºA">
+
+    <label>Data da sessão</label>
+    <input type="date" id="datasessao">
 
     <label>N.º de alunos presentes</label>
     <input type="number" id="nalunos" placeholder="Ex: 24" min="1" max="40" inputmode="numeric">
@@ -182,6 +185,15 @@
 
   let momento = "PRE";
   let guardado = false;
+
+  // Data da sessão: hoje por defeito (data local), editável para registos feitos noutro dia
+  function hojeLocal(){
+    const d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+  }
+  const campoData = document.getElementById("datasessao");
+  campoData.value = hojeLocal();
+  campoData.max = hojeLocal();
   document.querySelectorAll(".momento-btn").forEach(btn=>{
     btn.addEventListener("click", ()=>{
       document.querySelectorAll(".momento-btn").forEach(b=>b.classList.remove("active"));
@@ -207,7 +219,7 @@
   });
 
   document.getElementById("novoBtn").addEventListener("click", ()=>{
-    // Mantém agrupamento, turma e n.º de alunos; limpa as estratégias para o novo momento
+    // Mantém agrupamento, turma, data e n.º de alunos; limpa as estratégias para o novo momento
     keys.forEach(k=>document.getElementById(k).checked=false);
     updateCount();
     guardado = false;
@@ -226,8 +238,15 @@
     const msg = document.getElementById("msg");
     const btn = document.getElementById("submitBtn");
 
+    const dataSessao = document.getElementById("datasessao").value;
+
     if(!agrupamento || !turma){
       msg.textContent = "Preencha agrupamento e turma.";
+      msg.className = "msg err";
+      return;
+    }
+    if(!dataSessao || dataSessao > hojeLocal()){
+      msg.textContent = "Indique a data da sessão (não pode ser uma data futura).";
       msg.className = "msg err";
       return;
     }
@@ -235,7 +254,8 @@
     const payload = {
       agrupamento: agrupamento.toUpperCase(),
       turma: turma,
-      momento: momento
+      momento: momento,
+      data_sessao: dataSessao
     };
     const nAlunos = parseInt(document.getElementById("nalunos").value, 10);
     if(nAlunos > 0) payload.n_alunos = nAlunos;
